@@ -60,9 +60,35 @@ class AmericanCallOptionSampler(AbstractSampler):
 
         if probability_law is None:
             probability_law = np.random.uniform
-            sampled_points: np.ndarray = np.concatenate(
-                [probability_law(self)]
-            )
+            if self.n_dim > 1:
+                sampled_points_top: np.ndarray = np.concatenate(
+                    [probability_law(self.t_start, self.t_end, size=(self.n_points, 1)),
+                     np.ones((self.n_points, 1)) * self.domain[1],
+                     probability_law(self.domain[0], self.domain[1], (self.n_points, self.n_dim - 1))]
+                )
+                sampled_points_bottom: np.ndarray = np.concatenate(
+                    [probability_law(self.t_start, self.t_end, size=(self.n_points, 1)),
+                     np.ones((self.n_points, 1)) * self.domain[0],
+                     probability_law(self.domain[0], self.domain[1], (self.n_points, self.n_dim - 1))]
+                )
+            else:
+                sampled_points_top: np.ndarray = np.concatenate(
+                    [
+                        probability_law(self.t_start, self.t_end, size=(self.n_points, 1)),
+                        np.ones((self.n_points, 1)) * self.domain[1]
+                    ]
+                )
 
-    def sample_initial(self, probability_law: Optional[Callable] = None) -> np.ndarray:
-        pass
+                sampled_points_bottom: np.ndarray = np.concatenate(
+                    [
+                        probability_law(self.t_start, self.t_end, size=(self.n_points, 1)),
+                        np.ones((self.n_points, 1)) * self.domain[0]
+                    ]
+                )
+            return sampled_points_top, sampled_points_bottom
+
+        else:
+            raise NotImplementedError
+
+        def sample_initial(self, probability_law: Optional[Callable] = None) -> np.ndarray:
+            pass
