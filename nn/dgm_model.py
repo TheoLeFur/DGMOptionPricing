@@ -1,4 +1,4 @@
-from typing import Optional, Callable, List
+from typing import Optional, Callable
 
 import torch
 import torch.nn as nn
@@ -70,7 +70,7 @@ class DGMNet(nn.Module):
         :param x: Input tensor
         :return: Output
         """
-        output = None
+        output: torch.Tensor
         S1: torch.Tensor = self.Sw(x)
         for i in range(self.n_layers):
             S: torch.Tensor = S1 if i == 0 else self.activation_fn(output)
@@ -80,6 +80,6 @@ class DGMNet(nn.Module):
             R: torch.Tensor = self.activation_fn(self.Ur(x) + self.Wg(S))
             H: torch.Tensor = self.activation_fn(self.Uh(x) + self.Wg(torch.mul(S, R)))
 
-            output = torch.mul(1 - G, H) + torch.mul(Z, S)
+            output: torch.Tensor = torch.mul(1 - G, H) + torch.mul(Z, S)
         out: torch.Tensor = self.output_activation_fn(self.output_layer(output))
         return out
