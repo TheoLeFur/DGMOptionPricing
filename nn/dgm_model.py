@@ -19,6 +19,7 @@ class DGMNet(nn.Module):
             n_linear_layers: int = 9) -> None:
         """
         This module builds the DGM network architecture.
+
         :param input_dim: Input dimension (Number of stocks + time dimension)
         :param output_dim: Output Dimensions
         :param n_layers: Number of layers

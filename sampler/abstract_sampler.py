@@ -9,7 +9,7 @@ class AbstractSampler(ABC):
             n_points: int,
             n_dim: int):
         """
-        Basic sampler for Deep Garlekin Method
+        Basic sampler for Deep Galerkin Method
         :param n_points: Number of points we want to sample
         :param n_dim: Number of dimensions
         """
