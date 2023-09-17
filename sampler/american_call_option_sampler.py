@@ -44,7 +44,8 @@ class AmericanCallOptionSampler(AbstractSampler):
                 [probability_law(self.t_start, self.t_end, (self.n_points, 1)),
                  probability_law(
                      self.domain[0], self.domain[1], (self.n_points, self.n_dim))
-                 ]
+                 ],
+                axis=1
             )
 
             return sampled_points
@@ -64,31 +65,54 @@ class AmericanCallOptionSampler(AbstractSampler):
                 sampled_points_top: np.ndarray = np.concatenate(
                     [probability_law(self.t_start, self.t_end, size=(self.n_points, 1)),
                      np.ones((self.n_points, 1)) * self.domain[1],
-                     probability_law(self.domain[0], self.domain[1], (self.n_points, self.n_dim - 1))]
+                     probability_law(self.domain[0], self.domain[1], (self.n_points, self.n_dim - 1))],
+                    axis=1
                 )
                 sampled_points_bottom: np.ndarray = np.concatenate(
                     [probability_law(self.t_start, self.t_end, size=(self.n_points, 1)),
                      np.ones((self.n_points, 1)) * self.domain[0],
-                     probability_law(self.domain[0], self.domain[1], (self.n_points, self.n_dim - 1))]
+                     probability_law(self.domain[0], self.domain[1], (self.n_points, self.n_dim - 1))],
+                    axis=1
                 )
             else:
                 sampled_points_top: np.ndarray = np.concatenate(
                     [
                         probability_law(self.t_start, self.t_end, size=(self.n_points, 1)),
                         np.ones((self.n_points, 1)) * self.domain[1]
-                    ]
+                    ],
+                    axis=1
                 )
 
                 sampled_points_bottom: np.ndarray = np.concatenate(
                     [
                         probability_law(self.t_start, self.t_end, size=(self.n_points, 1)),
-                        np.ones((self.n_points, 1)) * self.domain[0]
-                    ]
+                        np.ones((self.n_points, 1)) * self.domain[0],
+
+                    ],
+                    axis=1
                 )
             return sampled_points_top, sampled_points_bottom
 
         else:
             raise NotImplementedError
 
-        def sample_initial(self, probability_law: Optional[Callable] = None) -> np.ndarray:
-            pass
+    def sample_initial(self, probability_law: Optional[Callable] = None) -> np.ndarray:
+
+        """
+        Sample points for the set given by the initial condition
+        :param probability_law: probability distribution we sample from
+        :return: Sampled points
+        """
+
+        if probability_law is None:
+            probability_law = np.random.uniform
+
+            sampled_points = np.concatenate([
+                np.ones((self.n_points, 1)) * self.t_end,
+                probability_law(self.domain[0], self.domain[1], (self.n_points, self.n_dim))
+            ],
+                axis=1
+            )
+            return sampled_points
+        else:
+            raise NotImplementedError
