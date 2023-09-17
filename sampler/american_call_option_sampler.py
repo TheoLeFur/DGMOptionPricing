@@ -21,7 +21,8 @@ class AmericanCallOptionSampler(AbstractSampler):
         :param t_start: Start time
         :param t_end: End time
         :param domain: Stock price domain, that is assumed to be of the form  [a, b] x ... x [a, b]
-        TODO : Implement a class domain for more complex domains
+        # TODO implement a more general sampler where one allows different strike prices.
+
         """
         super().__init__(
             n_points=n_points,
@@ -116,3 +117,9 @@ class AmericanCallOptionSampler(AbstractSampler):
             return sampled_points
         else:
             raise NotImplementedError
+
+
+
+
+
+
