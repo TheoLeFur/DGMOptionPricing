@@ -3,7 +3,7 @@ import torch
 from typing import Optional
 
 
-def from_numpy(array: np.ndarray, device: Optional = None) -> torch.Tensor:
+def from_numpy(array: np.ndarray, device: Optional = None, requires_grad: Optional = True) -> torch.Tensor:
     """
     Convert from np.ndarray to torch tensor, converts to standard float32.
     :param array: Numpy array
@@ -14,4 +14,6 @@ def from_numpy(array: np.ndarray, device: Optional = None) -> torch.Tensor:
     output = output.type(torch.float32)
     if device is not None:
         output.to(device)
+    if requires_grad:
+        output.requires_grad_()
     return output

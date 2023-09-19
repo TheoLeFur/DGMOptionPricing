@@ -1,15 +1,16 @@
-import numpy as np
-from typing import Tuple
+from typing import Callable, Dict, Tuple
 
+import numpy as np
+import torch
+import torch.autograd as grad
+import torch.nn as nn
+
+import utils.ptu as ptu
 from models.abstract_model import AbstractModel
 from nn.dgm_net import DGMNet
-import torch
-import torch.nn as nn
 from sampler.abstract_sampler import AbstractSampler
-from typing import Callable, Dict
-from utils.logger import Logger
-import torch.autograd as grad
 from sampler.american_call_option_sampler import AmericanCallOptionSampler
+from utils.logger import Logger
 
 
 class DGMModel(AbstractModel):
@@ -32,6 +33,7 @@ class DGMModel(AbstractModel):
         :param device: Device on which training occurs, defaulted to CPU
         """
         self.net_params = net_params
+        self.n_dim: int = self.net_params["input_dim"]
 
         self.model = DGMNet(
             **self.net_params
@@ -58,24 +60,39 @@ class DGMModel(AbstractModel):
     def loss_fn(
             self,
             x_domain: np.ndarray,
+            x_boundary: Tuple[np.ndarray, np.ndarray],
+            x_initial: np.ndarray
     ) -> torch.Tensor:
         """
         Implements the loss function for solving the PDE.
         :return: Value of the loss function
         """
-        print(x_domain.dtype)
-        x_domain: torch.Tensor = torch.from_numpy(x_domain).to(self.device)
+        x_domain: torch.Tensor = ptu.from_numpy(x_domain, self.device, requires_grad=True)
         model_output_domain: torch.Tensor = self.model(x_domain)
 
-        gradients = grad.grad(
+        gradients_domain: torch.Tensor = grad.grad(
             outputs=model_output_domain,
             inputs=x_domain,
-            grad_outputs=torch.ones(model_output_domain).to(self.device),
+            grad_outputs=torch.ones(model_output_domain.shape).to(self.device),
             create_graph=True,
             retain_graph=True,
             only_inputs=True,
-        )
-        print(gradients)
+        )[0]
+
+        time_derivative = gradients_domain[:, 0]
+
+        domain_loss_term = self.criterion(time_derivative, 0)
+
+        x_boundary_top, x_boundary_bottom = x_boundary
+
+        x_boundary_top = ptu.from_numpy(x_boundary_top, self.device, requires_grad=True)
+        x_boundary_bottom = ptu.from_numpy(x_boundary_bottom, self.device, requires_grad=True)
+
+        model_output_boundary_top: torch.Tensor = self.model(x_boundary_top)
+        model_output_boundary_bottom: torch.Tensor = self.model(x_boundary_bottom)
+
+        x_initial: torch.Tensor = ptu.from_numpy(x_initial, self.device, requires_grad=True)
+        model_output_initial: torch.Tensor = self.model(x_initial)
 
     def step(self):
 
@@ -94,8 +111,11 @@ class DGMModel(AbstractModel):
 
 
 if __name__ == '__main__':
+    time_dim = 1
+    space_dim = 2
+
     net_params: Dict = dict(
-        input_dim=2,
+        input_dim=time_dim + space_dim,
         output_dim=1,
         n_layers=2,
         n_units=32,
@@ -103,8 +123,8 @@ if __name__ == '__main__':
     )
 
     sampler = AmericanCallOptionSampler(
-        n_points=10,
-        n_dim=2,
+        n_points=1,
+        n_dim=space_dim,
         t_start=0,
         t_end=1,
         domain=[0, 2]
@@ -116,5 +136,7 @@ if __name__ == '__main__':
     )
 
     loss = model.loss_fn(
-        sampler.sample_domain()
+        x_domain=sampler.sample_domain(),
+        x_boundary=sampler.sample_boundary(),
+        x_initial=sampler.sample_initial()
     )
