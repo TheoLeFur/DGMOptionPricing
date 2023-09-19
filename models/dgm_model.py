@@ -33,7 +33,7 @@ class DGMModel(AbstractModel):
         :param device: Device on which training occurs, defaulted to CPU
         """
         self.net_params = net_params
-        self.n_dim: int = self.net_params["input_dim"]
+        self.n_dim: int = self.net_params["input_dim"] - 1
 
         self.model = DGMNet(
             **self.net_params
@@ -79,9 +79,12 @@ class DGMModel(AbstractModel):
             only_inputs=True,
         )[0]
 
-        time_derivative = gradients_domain[:, 0]
+        time_derivative: torch.Tensor = gradients_domain[:, 0].view(-1, 1)
+        space_gradients: torch.Tensor = gradients_domain[:, 1:].reshape(-1, self.n_dim)
 
-        domain_loss_term = self.criterion(time_derivative, 0)
+
+
+        domain_loss_term = self.criterion(time_derivative, torch.zeros_like(time_derivative))
 
         x_boundary_top, x_boundary_bottom = x_boundary
 
@@ -123,7 +126,7 @@ if __name__ == '__main__':
     )
 
     sampler = AmericanCallOptionSampler(
-        n_points=1,
+        n_points=5,
         n_dim=space_dim,
         t_start=0,
         t_end=1,
