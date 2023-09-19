@@ -12,7 +12,7 @@ class AmericanCallOptionSampler(AbstractSampler):
             n_dim: int,
             t_start: float,
             t_end: float,
-            domain: List[List]
+            domain: List[int]
     ):
         """
         This sampler will be used for solving the Black-Scholes PDE for american Call Option
@@ -117,9 +117,3 @@ class AmericanCallOptionSampler(AbstractSampler):
             return sampled_points
         else:
             raise NotImplementedError
-
-
-
-
-
-
