@@ -22,7 +22,8 @@ class DGMModel(AbstractModel):
             pde: ParabolicPDE,
             criterion: Callable = None,
             optimizer=None,
-            device: torch.device = None
+            device: torch.device = None,
+            logging_param_keys: Dict = None
     ) -> None:
 
         """
@@ -43,6 +44,10 @@ class DGMModel(AbstractModel):
 
         self.sampler: AbstractSampler = sampler
         self.pde: ParabolicPDE = pde
+        if logging_param_keys is None:
+            self.logging_param_keys : Dict = {}
+        else:
+            self.logging_param_keys = logging_param_keys
 
         if criterion is None:
             self.criterion = nn.MSELoss()
@@ -59,7 +64,7 @@ class DGMModel(AbstractModel):
         else:
             self.device = device
 
-        self.logger = Logger()
+        self.logger = Logger(self.logging_param_keys)
 
     def loss_fn(
             self,
@@ -90,7 +95,7 @@ class DGMModel(AbstractModel):
         time_derivative: torch.Tensor = gradients_domain[:, 0].view(-1, 1)
         space_gradients: torch.Tensor = gradients_domain[:, 1:].reshape(-1, self.n_dim)
 
-        first_order_operator = torch.matmul(drift.reshape(-1,1), space_gradients.T)
+        first_order_operator = torch.matmul(drift.reshape(-1, 1), space_gradients.T)
         print(first_order_operator.shape)
         domain_loss_term = self.criterion(-time_derivative, first_order_operator)
 
@@ -136,7 +141,7 @@ if __name__ == '__main__':
     )
 
     pde = ParabolicPDE(
-        drift = np.ones((space_dim, 1)),
+        drift=np.ones((space_dim, 1)),
         diffusion_matrix=np.ones((space_dim, space_dim)),
         time_dimension=True,
         space_dimension=space_dim,
