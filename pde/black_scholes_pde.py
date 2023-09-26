@@ -26,3 +26,7 @@ class BlackScholesPDE(ParabolicPDE):
             raise ValueError("Negative rates not allowed")
         else:
             self.rate = rate
+
+
+
+

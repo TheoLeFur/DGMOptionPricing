@@ -33,6 +33,8 @@ class AmericanCallOptionSampler(AbstractSampler):
         self.t_end = t_end
         self.domain = domain
 
+        self.strike_price = self.domain[1]
+
     def sample_domain(self, probability_law: Optional[Callable] = None) -> np.ndarray:
         """
         Sample points from the interior of the domain

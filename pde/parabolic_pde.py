@@ -29,4 +29,8 @@ class ParabolicPDE(AbstractPDE):
         else:
             raise ValueError("Diffusion matrix is not consistent with specified dimension")
 
+    def get_drift(self) -> np.ndarray:
+        return self.drift
 
+    def get_diffusion(self) -> np.ndarray:
+        return self.diffusion_matrix

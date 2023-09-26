@@ -7,6 +7,7 @@ import torch.nn as nn
 
 import utils.ptu as ptu
 from models.abstract_model import AbstractModel
+from pde.parabolic_pde import ParabolicPDE
 from nn.dgm_net import DGMNet
 from sampler.abstract_sampler import AbstractSampler
 from sampler.american_call_option_sampler import AmericanCallOptionSampler
@@ -18,6 +19,7 @@ class DGMModel(AbstractModel):
             self,
             net_params: Dict,
             sampler: AbstractSampler,
+            pde: ParabolicPDE,
             criterion: Callable = None,
             optimizer=None,
             device: torch.device = None
@@ -35,11 +37,13 @@ class DGMModel(AbstractModel):
         self.net_params = net_params
         self.n_dim: int = self.net_params["input_dim"] - 1
 
-        self.model = DGMNet(
+        self.model: DGMNet = DGMNet(
             **self.net_params
         )
 
-        self.sampler = sampler
+        self.sampler: AbstractSampler = sampler
+        self.pde: ParabolicPDE = pde
+
         if criterion is None:
             self.criterion = nn.MSELoss()
         else:
@@ -69,6 +73,10 @@ class DGMModel(AbstractModel):
         """
         x_domain: torch.Tensor = ptu.from_numpy(x_domain, self.device, requires_grad=True)
         model_output_domain: torch.Tensor = self.model(x_domain)
+        drift, diffusion = self.pde.get_drift(), self.pde.get_diffusion()
+        drift, diffusion = (ptu.from_numpy(drift, self.device, requires_grad=True),
+                            ptu.from_numpy(diffusion, self.device, requires_grad=True)
+                            )
 
         gradients_domain: torch.Tensor = grad.grad(
             outputs=model_output_domain,
@@ -82,9 +90,11 @@ class DGMModel(AbstractModel):
         time_derivative: torch.Tensor = gradients_domain[:, 0].view(-1, 1)
         space_gradients: torch.Tensor = gradients_domain[:, 1:].reshape(-1, self.n_dim)
 
+        first_order_operator = torch.matmul(drift.reshape(-1,1), space_gradients.T)
+        print(first_order_operator.shape)
+        domain_loss_term = self.criterion(-time_derivative, first_order_operator)
 
-
-        domain_loss_term = self.criterion(time_derivative, torch.zeros_like(time_derivative))
+        # TODO : implement the second derivative monte carlo approximation algorithm
 
         x_boundary_top, x_boundary_bottom = x_boundary
 
@@ -125,6 +135,14 @@ if __name__ == '__main__':
         activation_fn=nn.Tanh()
     )
 
+    pde = ParabolicPDE(
+        drift = np.ones((space_dim, 1)),
+        diffusion_matrix=np.ones((space_dim, space_dim)),
+        time_dimension=True,
+        space_dimension=space_dim,
+        name="bs_pde"
+    )
+
     sampler = AmericanCallOptionSampler(
         n_points=5,
         n_dim=space_dim,
@@ -135,7 +153,8 @@ if __name__ == '__main__':
 
     model = DGMModel(
         net_params=net_params,
-        sampler=sampler
+        sampler=sampler,
+        pde=pde
     )
 
     loss = model.loss_fn(
