@@ -7,7 +7,7 @@ import torch.nn as nn
 
 import utils.ptu as ptu
 from models.abstract_model import AbstractModel
-from pde.parabolic_pde import ParabolicPDE
+from pde.black_scholes_pde import BlackScholesPDE
 from nn.dgm_net import DGMNet
 from sampler.abstract_sampler import AbstractSampler
 from sampler.american_call_option_sampler import AmericanCallOptionSampler
@@ -19,7 +19,7 @@ class DGMModel(AbstractModel):
             self,
             net_params: Dict,
             sampler: AbstractSampler,
-            pde: ParabolicPDE,
+            pde: BlackScholesPDE,
             criterion: Callable = None,
             optimizer=None,
             device: torch.device = None,
@@ -43,9 +43,9 @@ class DGMModel(AbstractModel):
         )
 
         self.sampler: AbstractSampler = sampler
-        self.pde: ParabolicPDE = pde
+        self.pde:  BlackScholesPDE = pde
         if logging_param_keys is None:
-            self.logging_param_keys : Dict = {}
+            self.logging_param_keys: Dict = {}
         else:
             self.logging_param_keys = logging_param_keys
 
@@ -111,6 +111,41 @@ class DGMModel(AbstractModel):
 
         x_initial: torch.Tensor = ptu.from_numpy(x_initial, self.device, requires_grad=True)
         model_output_initial: torch.Tensor = self.model(x_initial)
+
+    def get_second_order_differential_operator(
+            self,
+            x_domain: torch.Tensor,
+            model_output_domain: torch.Tensor,
+            delta: float
+    ):
+        diffusion = ptu.from_numpy(self.pde.get_diffusion(), self.device)
+
+        random_dir_gradients: torch.Tensor = grad.grad(
+            outputs=model_output_domain,
+            inputs=x_domain + self.get_random_direction(delta, diffusion),
+            grad_outputs=torch.ones_like(model_output_domain),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True
+        )[0]
+
+        gradients: torch.Tensor = grad.grad(
+            outputs=model_output_domain,
+            inputs=x_domain,
+            grad_outputs=torch.ones(model_output_domain.shape).to(self.device),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True,
+        )[0]
+
+    def get_random_direction(
+            self,
+            delta: float,
+            diffusion: torch.Tensor
+    ) -> torch.Tensor:
+
+        random_vector_normal: torch.Tensor = ptu.sample_multi_dimensional_bm(delta, diffusion)
+        return self.pde.volatility * random_vector_normal
 
     def step(self):
 

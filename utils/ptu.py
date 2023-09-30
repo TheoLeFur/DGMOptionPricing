@@ -7,6 +7,7 @@ import torch
 def from_numpy(array: np.ndarray, device: Optional = None, requires_grad: Optional = True) -> torch.Tensor:
     """
     Convert from np.ndarray to torch tensor, converts to standard float32.
+    :param requires_grad: If true, we require the gradients from the tensor.
     :param array: Numpy array
     :param device: optional device we load our tensor onto
     :return: Equivalent tensor
@@ -23,15 +24,14 @@ def from_numpy(array: np.ndarray, device: Optional = None, requires_grad: Option
 def sample_multi_dimensional_bm(
         t: float,
         diffusion_matrix: torch.tensor,
-        samples_shape: torch.Size
 ):
     """
     Sample from a multivariate norma distribution
     :param t: Time parameter
     :param diffusion_matrix: Diffusion matrix of the parabolic PDE
-    :param samples_shape: Shape of the samples
     :return: Samples from distribution
     """
+    mean = torch.zeros(diffusion_matrix.shape[0])
     multivariate_normal: torch.distributions.Distribution = torch.distributions.multivariate_normal.MultivariateNormal(
-        0, t * diffusion_matrix)
-    return multivariate_normal.sample(samples_shape)
+        mean, t * diffusion_matrix)
+    return multivariate_normal.sample()

@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class AbstractPDE(ABC):
@@ -40,3 +40,19 @@ class AbstractPDE(ABC):
         :return: space dim
         """
         return self.space_dimension
+
+    @abstractmethod
+    def get_zeroth_order_differential_operator(self, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_first_order_differential_operator(self, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_second_order_differential_operator(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+
+

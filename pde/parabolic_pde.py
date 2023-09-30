@@ -1,9 +1,9 @@
 import numpy as np
-
+from abc import ABC
 from pde.abstract_pde import AbstractPDE
 
 
-class ParabolicPDE(AbstractPDE):
+class ParabolicPDE(AbstractPDE, ABC):
 
     def __init__(
             self,
