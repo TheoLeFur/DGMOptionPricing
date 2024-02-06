@@ -1,29 +1,40 @@
-from abc import ABC
-from typing import Optional
+from abc import ABC, abstractmethod
+from typing import Optional, Callable
+import torch.nn as nn
 
 
 class BasePDE(ABC):
 
     def __init__(
             self,
-            n_dimensions: int,
-            time_dim: bool,
-            start_time: Optional[float] = None,
-            end_time: Optional[float] = None):
-
+            device,
+            time_dim: Optional[bool],
+            space_dim: Optional[int] = 1,
+    ):
         self.time_dim = time_dim
-        if time_dim:
-            self.spatial_dim = n_dimensions - 1
-            if start_time is None:
-                self.start_time = 0
-            else:
-                self.start_time = start_time
-            if end_time is None:
-                self.end_time = 1
-            else:
-                self.end_time = end_time
+        self.space_dim = space_dim
+        self.device = device
 
-            if self.start_time > self.end_time:
-                raise ValueError("Starting time cannot be smaller than ending time")
-        else:
-            self.spatial_dim = n_dimensions
+    @abstractmethod
+    def differential_operator(self, model: nn.Module, **kwargs) -> Callable:
+        """
+        Spatial differential operator that acts on u(t,x)
+        :return: Callable value on u
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def time_boundary(self, **kwargs) -> Callable:
+        """
+        Boundary condition for t = 0
+        :return: Callable on x
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def space_boundary(self) -> Callable:
+        """
+
+        :return: Callable on x, t, where x is on the boundary of the domain
+        """
+        raise NotImplementedError

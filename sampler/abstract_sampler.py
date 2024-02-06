@@ -1,5 +1,15 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from typing import Optional, Tuple, Any
+from dataclasses import dataclass
+import torch
+
+
+@dataclass
+class Sample:
+    domain_sample: torch.Tensor = None
+    initial_sample: torch.Tensor = None
+    boundary_sample: Tuple[torch.Tensor, Any] = None
 
 
 class AbstractSampler(ABC):
@@ -7,17 +17,24 @@ class AbstractSampler(ABC):
     def __init__(
             self,
             n_points: int,
-            n_dim: int):
+            device,
+            time_dim: Optional[bool] = True,
+            space_dim: Optional[int] = 1,
+    ):
         """
         Basic sampler for Deep Galerkin Method
         :param n_points: Number of points we want to sample
         :param n_dim: Number of dimensions
         """
+
         self.n_points = n_points
-        self.n_dim = n_dim
+        self.time_dim = time_dim
+        self.space_dim = space_dim
+
+        self.device = device
 
     @abstractmethod
-    def sample_domain(self) -> np.ndarray:
+    def sample_domain(self):
         """
         Sample points inside the domain
         :return: Array with sampled points
@@ -25,7 +42,7 @@ class AbstractSampler(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def sample_boundary(self) -> np.ndarray:
+    def sample_boundary(self):
         """
         Sample points on the boundary
         :return: Array with sampled points
@@ -33,9 +50,13 @@ class AbstractSampler(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def sample_initial(self) -> np.ndarray:
+    def sample_initial(self):
         """
         Sample points on initial condition set.
-        :return: Array with sampled poijts
+        :return: Array with sampled points
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    def sample_all(self) -> Sample:
         raise NotImplementedError
