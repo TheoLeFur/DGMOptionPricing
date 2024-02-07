@@ -15,9 +15,9 @@ def from_numpy(array: np.ndarray, device: Optional = None, requires_grad: Option
     output: torch.Tensor = torch.from_numpy(array)
     output = output.type(torch.float32)
     if device is not None:
-        output.to(device)
+        output = output.to(device)
     if requires_grad:
-        output.requires_grad_()
+        output = output.requires_grad_()
     return output
 
 

@@ -2,6 +2,7 @@ from typing import Optional, Callable
 
 import torch
 import torch.nn as nn
+from typing import Optional
 
 
 class DGMNet(nn.Module):
@@ -12,8 +13,8 @@ class DGMNet(nn.Module):
             output_dim: int,
             n_layers: int,
             n_units: int,
-            activation_fn: Callable = None,
-            output_activation_fn: Callable = None,
+            activation_fn: Callable,
+            output_activation_fn: Optional[Callable] = None,
             skip_connection: Optional[bool] = False,
             init_method: Callable = nn.init.xavier_uniform,
             n_linear_layers: int = 9) -> None:
@@ -64,6 +65,10 @@ class DGMNet(nn.Module):
 
         self.output_layer = nn.Linear(self.n_units, self.output_dim)
 
+    @property
+    def get_state(self):
+        return self.state_dict()
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the neural network
@@ -81,5 +86,7 @@ class DGMNet(nn.Module):
             H: torch.Tensor = self.activation_fn(self.Uh(x) + self.Wg(torch.mul(S, R)))
 
             output: torch.Tensor = torch.mul(1 - G, H) + torch.mul(Z, S)
+
         out: torch.Tensor = self.output_activation_fn(self.output_layer(output))
         return out
+s

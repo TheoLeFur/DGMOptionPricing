@@ -6,7 +6,7 @@ class Logger:
 
     def __init__(
             self,
-            logging_param_keys: Dict):
+            logging_param_keys: Dict) -> None:
         self.logging_param_keys = logging_param_keys
         self.history: Dict = {}
         for key in logging_param_keys:
